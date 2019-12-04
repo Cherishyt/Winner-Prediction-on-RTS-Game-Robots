@@ -31,3 +31,23 @@ Winner Prediction Project
 		* run `Parse_feature_count.java` (modify data path)
 		* generate 3D array: `(8,8,7)`
 * Encoding data format is `npy`.
+## Model
+### 1、CNN model
+* run `/CNN model/cnn_train.py`,rootpath is the path of npy files.
+* code refers to (https://github.com/hwalsuklee/tensorflow-mnist-cnn)
+### 2、MSCNN model
+* run `/MSCNN model/mscnn_train.py`,rootpath is the path of npy files.
+* code refers to (https://blog.csdn.net/loveliuzz/article/details/79135583)
+### 3、CNP model
+* run `/CNP model/cnp_train.py`,rootpath is the path of npy files.
+* code refers to (https://github.com/deepmind/neural-processes)
+### 4、BNN model
+* run `/BNN model/McDropout_train.py`,rootpath is the path of npy files.
+* code refers to (https://github.com/JavierAntoran/Bayesian-Neural-Networks)
+### 5、LSTM model
+* run `/LSTM model/lstm_train.py`,rootpath is the path of npy files.
+## Reference
+* M. Stanescu et al.(2016) Evaluating Real-Time Strategy Game States Using Convolutional Neural Networks. 10.1109/CIG.2016.7860439.
+* Jie Huang et al.(2018) A Multi-size Convolution Neural Network for RTS Games Winner Prediction.MATEC Web of Conferences,232.
+* Marta Garnelo, Dan Rosenbaum et al.(2018) Conditional neural processes.ICML.
+* Gal, Yarin & Ghahramani, Zoubin.(2015) Dropout as a Bayesian Approximation: Representing Model Uncertainty in Deep Learning. Proceedings of The 33rd International Conference on Machine Learning.
