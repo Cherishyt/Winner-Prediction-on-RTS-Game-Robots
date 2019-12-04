@@ -2,46 +2,43 @@ import numpy as np
 import os
 from xml.etree import ElementTree as ET
 
-# 数据路径
+#the path of reading dataset
 rootpath = r'F:\yutian\Datasets\InterceptedDatasets\randomsample'
+#the path of saving encoding npy files
 targetpath = r'F:\yutian\Datasets\InterceptedDatasets\randomsample_encoding_feature_count'
 
 #ONEHOT_SIZE = 38
-ALL_UNIT_TYPES = ['RESOURCE', 'BASE', 'BARRACKS', 'WORKER', 'LIGHT', 'RANGED', 'HEAVY']  # 七位来编码单位类型
+ALL_UNIT_TYPES = ['RESOURCE', 'BASE', 'BARRACKS', 'WORKER', 'LIGHT', 'RANGED', 'HEAVY'] 
 
 np.set_printoptions(threshold=np.inf)
 
 
-# 编码函数,对每个传入的文件进行编码，返回三维数组map和winner
+# encoding function
 def encoding(r_path,file):
     map = np.ndarray((8, 8, 7))
     map.fill(0)
-    # 数组存放统计次数
+	
     unittype_count = [0 for i in range(7)]
     unitowner_count = [0 for i in range(2)]
     resources_count = [0 for i in range(20)]
     hitpoints_count = [0 for i in range(10)]
     actiontype_count = [0 for i in range(62)]
 
-    # 解析
     tree = ET.parse(os.path.join(r_path, file))
-    # 获取根节点
     root = tree.getroot()
 
     traceentry_node = root.find('rts.TraceEntry')
     pgs_node = traceentry_node.find('rts.PhysicalGameState')
-    # 获取winner
+    # get labels
     winner_node = root.find('winner')
     winner = int(winner_node.get('winner'))
     # print("winner:")
     # print(winner)
-    # 平局情况
+    # draw
     if winner == -1:
-        # 第一种，平局为winner0
         # winner=0
-        # 第二种，平局为winner1
         # winner=1
-        # 第三种，随机
+        # random
         # '''
         r = np.random.randint(0, 2)
         if r == 0:
@@ -51,44 +48,43 @@ def encoding(r_path,file):
         # '''
     # print(winner)
 
-    # 遍历第一遍统计
-    # <units>下的数据
+    # <units>
     units_node = pgs_node.find('units')
     for unit_node in units_node:
-        # 统计unittype的频次
+        # count unittype frequency
         type = unit_node.get('type')
         i = ALL_UNIT_TYPES.index(type.upper())
         unittype_count[i] += 1
 
-        # 统计unitowner的频次
+        #count unitowner frequency
         player = unit_node.get('player')
         if player == '0':
             unitowner_count[0] += 1
         elif player == '1':
             unitowner_count[1] += 1
 
-        # 统计resources的频次
+        # count resources frequency
         resources = int(unit_node.get('resources'))
-        if resources == 0:  # 不用统计
+        if resources == 0: 
             pass
         else:
             resources_count[resources - 1] += 1
 
-        # 统计hitpoints的频次
+        # count hitpoints frequency
         hitpoints = int(unit_node.get('hitpoints'))
-        if hitpoints == 0:  # 不用统计
+        if hitpoints == 0: 
             pass
         else:
             hitpoints_count[hitpoints - 1] += 1
 
-        # <actions>下的数据
+        # <actions>
     actions_node = traceentry_node.find('actions')
     for action_node in actions_node:
-        # 统计actiontype的频次
+        # count actiontype frequency
         a_type = int(action_node.find('UnitAction').get('type'))
         actiontype_count[a_type] += 1
 
-    # 输出统计结果
+    #statistical results
     '''
     print(unittype_count)
     print(unitowner_count)
@@ -96,31 +92,31 @@ def encoding(r_path,file):
     print(hitpoints_count)
     print(actiontype_count)
     '''
-    # 开始根据频次生成三维数组map
+    # generate 3D array based on statistical results
     for unit_node in units_node:
         x = int(unit_node.get('x'))
         y = int(unit_node.get('y'))
-        # unittype位
+        # unittype
         type = unit_node.get('type')
         i = ALL_UNIT_TYPES.index(type.upper())
         #print(unittype_count[i])
         map[y, x, 0] = unittype_count[i]
 
-        # unitowner位
+        # unitowner
         player = unit_node.get('player')
         if player == '0':
             map[y, x, 1] = unitowner_count[0]
         elif player == '1':
             map[y, x, 1] = unitowner_count[1]
-
-        # resources位
+			
+        # resources
         resources = int(unit_node.get('resources'))
         if resources == 0:
             map[y, x, 2] = 0
         else:
             map[y, x, 2] = resources_count[resources - 1]
 
-        # hitpoints位
+        # hitpoints
         hitpoints = int(unit_node.get('hitpoints'))
         if hitpoints == 0:
             map[y, x, 3] = 0
@@ -130,14 +126,14 @@ def encoding(r_path,file):
     if actions_node:
         for action_node in actions_node:
             unitid = action_node.get('unitID')
-            # 查找有action的unit
+			#look for action's unit by ID
             for unit_node in units_node:
                 id = unit_node.get('ID')
                 if unitid == id:
                     a_x = int(unit_node.get('x'))
                     a_y = int(unit_node.get('y'))
 
-            # actiontype位
+            # actiontype
             a_type = int(action_node.find('UnitAction').get('type'))
             map[a_y, a_x, 4] = actiontype_count[a_type]
 
@@ -150,19 +146,19 @@ def encoding(r_path,file):
             else:
                 # parameter
                 a_parameter = int(action_node.find('UnitAction').get('parameter'))
-                if a_parameter == 0:  # 上
+                if a_parameter == 0:  # up
                     b_y = b_y - 1
-                elif a_parameter == 1:  # 右
+                elif a_parameter == 1:  # right
                     b_x = b_x + 1
-                elif a_parameter == 2:  # 下
+                elif a_parameter == 2:  # down
                     b_y = b_y + 1
-                elif a_parameter == 3:  # 左
+                elif a_parameter == 3:  # left
                     b_x = b_x - 1
 
-            # 被动承受位
+            # passive action type
             if a_type > 0:
                 map[b_y, b_x, 5] = actiontype_count[a_type]
-            # 生成unittype位
+            # produce unitType
             if a_type == 4:
                 b_type = action_node.find('UnitAction').get('unitType')
                 m = ALL_UNIT_TYPES.index(b_type.upper())
