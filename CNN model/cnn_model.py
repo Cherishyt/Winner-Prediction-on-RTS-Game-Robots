@@ -8,11 +8,11 @@ def CNN(inputs, is_training=True):
                         normalizer_fn=slim.batch_norm,
                         normalizer_params=batch_norm_params):
 
-        net = slim.conv2d(inputs, 32, [5, 5], scope='conv1')
+        net = slim.conv2d(inputs, 32, [3, 3], scope='conv1')
         #print(net)#8*8*32
         net = slim.max_pool2d(net, [2, 2], scope='pool1')
         #print(net)#4*4*32
-        net = slim.conv2d(net, 64, [5, 5], scope='conv2')
+        net = slim.conv2d(net, 64, [3, 3], scope='conv2')
         #print(net)#4*4*64
         net = slim.max_pool2d(net, [2, 2], scope='pool2')
         #print(net)#2*2*64
