@@ -29,28 +29,37 @@ def get_train_test_data(filepath):
     print(Y_train.shape)
     print(X_test.shape)
     print(Y_test.shape)
-    return X, Y, X_test, Y_test
+    return X_train, Y_train, X_test, Y_test
 
 #get context sets and target sets
 def split_c_t(x,y,batch_size):
     data_size=x.shape[0]
     total_batch = int(data_size / batch_size)
-    context_x,context_y,target_x,target_y = [], [], [], []
+    #sub-sets S_x,S_y
     for i in range(total_batch):
         offset = (i * batch_size) % (data_size)
         batch_x = x[offset:(offset + batch_size), :]
         batch_y = y[offset:(offset + batch_size), :]
-        batch_x_context,batch_x_target, batch_y_context, batch_y_target = train_test_split(batch_x, batch_y, test_size=1 / 2)
-        context_x.append(batch_x_context)
-        context_y.append(batch_y_context)
-        target_x.append(batch_x_target)
-        target_y.append(batch_y_target)
-    context_x = np.array(context_x)
-    context_y = np.array(context_y)
-    target_x = np.array(target_x)
-    target_y = np.array(target_y)
+        batch_x = np.expand_dims(batch_x,axis=1)
+        batch_y = np.expand_dims(batch_y, axis=1)
+        if i==0:
+            S_x=batch_x
+            S_y=batch_y
+        else:
+            S_x=np.concatenate((S_x,batch_x),axis=1)
+            S_y=np.concatenate((S_y,batch_y),axis=1)
+    print(S_x.shape)
+    print(S_y.shape)
+    num_observations=S_x.shape[1]
+    num_target=int(num_observations/2)
+    print(num_target)
+    context_x=S_x[: ,:num_target,:]
+    context_y = S_y[: ,:num_target, :]
+    target_x = S_x[: , num_target: , :]
+    target_y = S_y[: , num_target: , :]
+
     print(context_x.shape)
     print(context_y.shape)
     print(target_x.shape)
     print(target_y.shape)
-    return context_x,context_y,target_x,target_y
+    return S_x,S_y,target_x,target_y
