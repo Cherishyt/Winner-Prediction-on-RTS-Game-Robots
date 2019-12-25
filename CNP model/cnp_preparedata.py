@@ -24,7 +24,7 @@ def get_train_test_data(filepath):
     Y = np.array(Y)
 
     #50% train sets，50% test sets
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=1 / 2)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=1 / 3)
     print(X_train.shape)
     print(Y_train.shape)
     print(X_test.shape)
