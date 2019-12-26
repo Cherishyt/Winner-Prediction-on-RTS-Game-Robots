@@ -33,9 +33,7 @@ class BayesLinear_Normalq(nn.Module):
         self.n_out = n_out
         self.prior = prior_class
 
-        #可学习的参数->初始化根据经验设置
         # Learnable parameters -> Initialisation is set empirically.
-        #uniform_(from=0, to = 1) → Tensor将tensor用从均匀分布中抽样得到的值填充。
         self.W_mu = nn.Parameter(torch.Tensor(self.n_in, self.n_out).uniform_(-0.1, 0.1))
         self.W_p = nn.Parameter(torch.Tensor(self.n_in, self.n_out).uniform_(-3, -2))
 
@@ -48,7 +46,6 @@ class BayesLinear_Normalq(nn.Module):
     def forward(self, X, sample=False):
         #         print(self.training)
 
-        #当不是训练也不是抽样的时候
         if not self.training and not sample:  # When training return MLE of w for quick validation
             output = torch.mm(X, self.W_mu) + self.b_mu.expand(X.size()[0], self.n_out)
             return output, 0, 0
@@ -142,7 +139,7 @@ class BBP_Bayes_Net(BaseNet):
     """Full network wrapper for Bayes By Backprop nets with methods for training, prediction and weight prunning"""
     eps = 1e-6
 
-    def __init__(self, lr=1e-3, channels_in=3, side_in=28, cuda=True, classes=2, batch_size=128, Nbatches=0,
+    def __init__(self, lr=1e-3, channels_in=38, side_in=8, cuda=True, classes=2, batch_size=500, Nbatches=0,
                  nhid=1200, prior_instance=laplace_prior(mu=0, b=0.1)):
         super(BBP_Bayes_Net, self).__init__()
         cprint('y', ' Creating Net!! ')
@@ -176,12 +173,8 @@ class BBP_Bayes_Net(BaseNet):
         print('    Total params: %.2fM' % (self.get_nb_parameters() / 1000000.0))
 
     def create_opt(self):
-        #         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-08,
-        #                                           weight_decay=0)
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0)
 
-    #         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9)
-    #         self.sched = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=10, last_epoch=-1)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0)
 
     def fit(self, x, y, samples=1):
 
@@ -200,8 +193,6 @@ class BBP_Bayes_Net(BaseNet):
 
             for i in range(samples):
                 out, tlqw, tlpw = self.model(x, sample=True)
-                #print(out.shape)
-                #print(y.shape)
                 mlpdw_i = F.cross_entropy(out, y.argmax(dim=1), reduction='sum')
                 Edkl_i = (tlqw - tlpw) / self.Nbatches
                 mlpdw_cum = mlpdw_cum + mlpdw_i
