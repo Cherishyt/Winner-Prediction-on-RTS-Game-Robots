@@ -42,12 +42,12 @@ Winner Prediction Project
 * run `/CNP model/cnp_train.py`,rootpath is the path of npy files.
 * code refers to (https://github.com/deepmind/neural-processes)
 ### 4、BNN model
-* run `/BNN model/McDropout_train.py`,rootpath is the path of npy files.
+* run `/BNN model/train_BayesByBackprop.py`,rootpath is the path of npy files.
 * code refers to (https://github.com/JavierAntoran/Bayesian-Neural-Networks)
 ### 5、LSTM model
 * run `/LSTM model/lstm_train.py`,rootpath is the path of npy files.
 ## Reference
-* M. Stanescu et al.(2016) Evaluating Real-Time Strategy Game States Using Convolutional Neural Networks. 10.1109/CIG.2016.7860439.
-* Jie Huang et al.(2018) A Multi-size Convolution Neural Network for RTS Games Winner Prediction.MATEC Web of Conferences,232.
-* Marta Garnelo, Dan Rosenbaum et al.(2018) Conditional neural processes.ICML.
-* Gal, Yarin & Ghahramani, Zoubin.(2015) Dropout as a Bayesian Approximation: Representing Model Uncertainty in Deep Learning. Proceedings of The 33rd International Conference on Machine Learning.
+* M. Stanescu et al.(2016). Evaluating Real-Time Strategy Game States Using Convolutional Neural Networks. 10.1109/CIG.2016.7860439.
+* Jie Huang et al.(2018). A Multi-size Convolution Neural Network for RTS Games Winner Prediction.MATEC Web of Conferences,232.
+* Marta Garnelo, Dan Rosenbaum et al.(2018). Conditional neural processes.ICML.
+* Blundell, C. , Cornebise, J. , Kavukcuoglu, K. , & Wierstra, D. . (2015). Weight uncertainty in neural networks. Computer Science.
