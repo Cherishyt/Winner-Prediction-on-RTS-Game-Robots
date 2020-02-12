@@ -19,7 +19,7 @@ def getalldata(filepath):
 
         x = np.load(os.path.join(filepath, file))
         X.append(x)
-    X = np.array(X)  #(,8,8,38)
+    X = np.array(X)  #(,8,8,39)
     Y = np.array(Y)  #(,2)
 
     #50% train sets，25% val sets，25% test set
