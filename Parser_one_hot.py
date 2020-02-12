@@ -6,7 +6,7 @@ import os
 rootpath=r'F:\yutian\Datasets\InterceptedDatasets\sample_part_20\samplepart1'
 #the path of saving encoding npy files
 targetpath=r'F:\yutian\Datasets\InterceptedDatasets\sample_part_20_encoding\samplepart1'
-ONEHOT_SIZE=38
+ONEHOT_SIZE=39
 ALL_UNIT_TYPES = ['RESOURCE','BASE', 'BARRACKS', 'WORKER', 'LIGHT', 'RANGED','HEAVY']
 ALL_RESOURCES=[1,2,3,4,5]
 ALL_HP=[1,2,3,4]
@@ -15,7 +15,7 @@ np.set_printoptions(threshold=np.inf)
 
 if __name__ == '__main__':
     def encoding(width,height,units_node,actions_node,p_resources):
-        map = np.ndarray((int(width), int(height),ONEHOT_SIZE))#create（w,h,38）
+        map = np.ndarray((int(width), int(height),ONEHOT_SIZE))#create（w,h,39）
         map.fill(0)
         #encoding units data
         unit_len=len(units_node)
@@ -85,7 +85,10 @@ if __name__ == '__main__':
 
                 b_x=a_x
                 b_y=a_y
-                if a_type==5:
+                if a_type==0:
+                    b_x=a_x
+                    b_y=a_y
+                elif a_type==5:
                     #x,y
                     b_x=int(action_node.find('UnitAction').get('x'))
                     b_y=int(action_node.find('UnitAction').get('y'))
@@ -100,14 +103,14 @@ if __name__ == '__main__':
                         b_y=b_y+1
                     elif a_parameter==3:#left
                         b_x=b_x-1
-                l=l-1
-                if l>-1:#passive action type，27-31
+                        
+                if l>-1:#passive action type，27-32
                     map[b_y,b_x,27+l]=1
-                if a_type==4:#produce unitType,32-37
+                if a_type==4:#produce unitType,33-38
                     #unitType
                     b_type=action_node.find('UnitAction').get('unitType')
                     m=ALL_UNIT_TYPES.index(b_type.upper())-1
-                    map[b_y,b_x,32+m]=1
+                    map[b_y,b_x,33+m]=1
         #print(map)
         return map
 
