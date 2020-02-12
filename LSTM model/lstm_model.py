@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 n_steps=8
-n_inputs=8*38
+n_inputs=8*39
 n_hiddens=64
 n_layers=2
 
