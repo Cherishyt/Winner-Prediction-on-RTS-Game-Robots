@@ -38,7 +38,7 @@ for file in os.listdir(rootpath):
     x=np.load(os.path.join(rootpath,file))
     X.append(x)
 
-X = np.array(X)  #(,8,8,38)
+X = np.array(X)  #(,8,8,39)
 Y = np.array(Y)  #(,2)
 print(X.shape)
 print(Y.shape)
