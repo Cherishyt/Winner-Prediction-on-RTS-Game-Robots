@@ -19,7 +19,7 @@ def getalldata(filepath):
         x = np.load(os.path.join(filepath, file))
         x = x.reshape([8,-1])
         X.append(x)
-    X = np.array(X)  #(,8,304)
+    X = np.array(X)  #(,8,312)
     Y = np.array(Y)  #(,2)
 
     X_train, X_val_test, Y_train, Y_val_test = train_test_split(X, Y, test_size=1 / 2)
