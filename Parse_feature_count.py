@@ -7,7 +7,6 @@ rootpath = r'F:\yutian\Datasets\InterceptedDatasets\randomsample'
 #the path of saving encoding npy files
 targetpath = r'F:\yutian\Datasets\InterceptedDatasets\randomsample_encoding_feature_count'
 
-#ONEHOT_SIZE = 38
 ALL_UNIT_TYPES = ['RESOURCE', 'BASE', 'BARRACKS', 'WORKER', 'LIGHT', 'RANGED', 'HEAVY'] 
 
 np.set_printoptions(threshold=np.inf)
@@ -22,7 +21,7 @@ def encoding(r_path,file):
     unitowner_count = [0 for i in range(2)]
     resources_count = [0 for i in range(20)]
     hitpoints_count = [0 for i in range(10)]
-    actiontype_count = [0 for i in range(62)]
+    actiontype_count = [0 for i in range(6)]
 
     tree = ET.parse(os.path.join(r_path, file))
     root = tree.getroot()
@@ -139,7 +138,10 @@ def encoding(r_path,file):
 
             b_x = a_x
             b_y = a_y
-            if a_type == 5:
+            if a_type==0:
+                b_x = a_x
+                b_y = a_y
+            elif a_type == 5:
                 # x,y
                 b_x = int(action_node.find('UnitAction').get('x'))
                 b_y = int(action_node.find('UnitAction').get('y'))
@@ -156,7 +158,7 @@ def encoding(r_path,file):
                     b_x = b_x - 1
 
             # passive action type
-            if a_type > 0:
+            if a_type > -1:
                 map[b_y, b_x, 5] = actiontype_count[a_type]
             # produce unitType
             if a_type == 4:
