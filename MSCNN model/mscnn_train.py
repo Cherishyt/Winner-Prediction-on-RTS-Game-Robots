@@ -35,7 +35,7 @@ def train():
     is_training = tf.placeholder(tf.bool, name='MODE')
 
     # tf Graph input
-    x = tf.placeholder(tf.float32, [None, 8,8,38])
+    x = tf.placeholder(tf.float32, [None, 8,8,39])
     y_ = tf.placeholder(tf.float32, [None, 2])
 
     # Predict
