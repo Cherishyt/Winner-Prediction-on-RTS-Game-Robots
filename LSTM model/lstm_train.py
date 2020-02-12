@@ -15,7 +15,7 @@ batchsize = 50
 # Hyper Parameters
 learning_rate = 1e-4  # learning rate
 n_steps = 8  # LSTM steps
-n_inputs = 312 #321(=8*39)，if use feature-count encoding, replace it with 56(=8*7).
+n_inputs = 8*39 #if use feature-count encoding, replace it with 8*7.
 n_hiddens = 64
 n_layers = 2  # LSTM layers
 n_classes = 2
