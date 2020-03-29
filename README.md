@@ -26,10 +26,7 @@ Winner Prediction Project
 * There are two kinds of encoding methods:<br>
 	* one-hot
 		* run `Parse_one_hot.py` (modify data path)
-		* generate 3D array: `(8,8,38)`
-	* feature count
-		* run `Parse_feature_count.java` (modify data path)
-		* generate 3D array: `(8,8,7)`
+		* generate 3D array: `(8,8,39)`
 * Encoding data format is `npy`.
 ## Model
 ### 1、CNN model
