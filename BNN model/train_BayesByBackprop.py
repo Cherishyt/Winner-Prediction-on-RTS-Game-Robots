@@ -15,9 +15,8 @@ results_dir = "BBP_results"
 mkdir(models_dir)
 mkdir(results_dir)
 # train config
-#NTrainPointsMNIST = 60000
-#test_batch_size=500
-batch_size = 500
+
+batch_size = 50
 nb_epochs = 100
 lr=1e-4
 
@@ -70,7 +69,7 @@ def minibatches(inputs=None, targets=None, batch_size=None, shuffle=False):
 
 
 #model
-net = BBP_Bayes_Net(lr=lr, channels_in=38, side_in=8, cuda=use_cuda, classes=2, batch_size=batch_size,
+net = BBP_Bayes_Net(lr=lr, channels_in=39, side_in=8, cuda=use_cuda, classes=2, batch_size=batch_size,
                     Nbatches=(NTrainPoints/ batch_size), nhid=1200, prior_instance=laplace_prior(mu=0, b=0.1))
                     #prior_instance=isotropic_gauss_prior(mu=0, sigma=0.1))
 
@@ -125,8 +124,7 @@ for i in range(0, nb_epochs):
     if i % nb_its_dev == 0:
         net.set_mode_train(False)
         nb_samples = 0
-        #for x, y in minibatches(X_val, Y_val, batch_size, shuffle=True):
-
+        
         cost, err, probs,acc,out = net.eval(X_val, Y_val)  # This takes the expected weights to save time, not proper inference
 
         cost_dev[i] += cost
