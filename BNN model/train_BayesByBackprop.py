@@ -35,10 +35,11 @@ for file in os.listdir(rootpath):
         raise ValueError("Invalid winner value!")
 
     x=np.load(os.path.join(rootpath,file))
+    x=x.reshape([-1])
     X.append(x)
 
-X = np.array(X)  #(,8,8,39)
-Y = np.array(Y)  #(,2)
+X = np.array(X)
+Y = np.array(Y)
 print(X.shape)
 print(Y.shape)
 #50% train sets，25% val sets，25% test set
