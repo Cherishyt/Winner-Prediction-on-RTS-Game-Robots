@@ -62,4 +62,4 @@ def split_c_t(x,y,batch_size):
     print(context_y.shape)
     print(target_x.shape)
     print(target_y.shape)
-    return S_x,S_y,target_x,target_y
+    return context_x,context_y,target_x,target_y
