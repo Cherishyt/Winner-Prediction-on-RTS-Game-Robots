@@ -4,61 +4,58 @@ import os
 
 #get train sets and test sets
 def get_train_test_data(filepath):
-    X, Y = [], []
+    T, W = [], []
     for file in os.listdir(filepath):
         filename = os.path.splitext(file)[0]
         #get labels
         winner = int(filename[-1:])
         #one-hot
         if winner == 0:
-            Y.append([1,0])
+            W.append([1,0])
         elif winner == 1:
-            Y.append([0,1])
+            W.append([0,1])
         else:
             raise ValueError("Invalid winner value!")
 
-        x = np.load(os.path.join(filepath, file))
-        x=x.reshape([-1])
-        X.append(x)
-    X = np.array(X)
-    Y = np.array(Y)
+        t = np.load(os.path.join(filepath, file))
+        t=t.reshape([-1])
+        T.append(t)
+    T = np.array(T)
+    W = np.array(W)
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=1 / 3)
-    print(X_train.shape)
-    print(Y_train.shape)
-    print(X_test.shape)
-    print(Y_test.shape)
-    return X_train, Y_train, X_test, Y_test
+    T_train, T_test, W_train, W_test = train_test_split(T, W, test_size=1 / 3)
+    print(T_train.shape)
+    print(W_train.shape)
+    print(T_test.shape)
+    print(W_test.shape)
+    return T_train, W_train, T_test, W_test
 
 #get context sets and target sets
-def split_c_t(x,y,batch_size):
-    data_size=x.shape[0]
-    total_batch = int(data_size / batch_size)
-    #sub-sets S_x,S_y
-    for i in range(total_batch):
-        offset = (i * batch_size) % (data_size)
-        batch_x = x[offset:(offset + batch_size), :]
-        batch_y = y[offset:(offset + batch_size), :]
-        batch_x = np.expand_dims(batch_x,axis=1)
-        batch_y = np.expand_dims(batch_y, axis=1)
-        if i==0:
-            S_x=batch_x
-            S_y=batch_y
+def split_c_t(T,W,batch_size,shuffle=False):
+    data_size=T.shape[0]
+    i=0
+    if shuffle:
+        indices=np.arange(data_size)
+        np.random.shuffle(indices)
+    for start_idx in range(0,data_size-batch_size+1,batch_size):
+        if shuffle:
+            excerpt=indices[start_idx:start_idx + batch_size]
         else:
-            S_x=np.concatenate((S_x,batch_x),axis=1)
-            S_y=np.concatenate((S_y,batch_y),axis=1)
-    print(S_x.shape)
-    print(S_y.shape)
-    num_observations=S_x.shape[1]
+            excerpt = slice(start_idx, start_idx + batch_size)
+        batch_T=np.expand_dims(T[excerpt],axis=1)
+        batch_W=np.expand_dims(W[excerpt],axis=1)
+        if i==0:
+            S_T=batch_T
+            S_W=batch_W
+        else:
+            S_T=np.concatenate((S_T,batch_T),axis=1)
+            S_W=np.concatenate((S_W,batch_W),axis=1)
+        i+=1
+    num_observations=S_T.shape[1]
     num_target=int(num_observations/2)
-    print(num_target)
-    context_x=S_x[: ,:num_target,:]
-    context_y = S_y[: ,:num_target, :]
-    target_x = S_x[: , num_target: , :]
-    target_y = S_y[: , num_target: , :]
+    c_T=S_T[: ,:num_target,:]
+    c_W = S_W[: ,:num_target, :]
+    t_T = S_T[: , num_target: , :]
+    t_W = S_W[: , num_target: , :]
 
-    print(context_x.shape)
-    print(context_y.shape)
-    print(target_x.shape)
-    print(target_y.shape)
-    return context_x,context_y,target_x,target_y
+    return c_T,c_W,t_T,t_W
