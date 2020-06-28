@@ -15,22 +15,19 @@ import numpy as np
 MODEL_DIRECTORY = "model/model.ckpt"
 LOGS_DIRECTORY = "logs/train"
 #the datasets is encoded to npy files
-rootpath=r'F:\yutian\Datasets\InterceptedDatasets\randomsample_encoding\npy'
+rootpath=r'E:\研\yutian\Datasets\randomsample_one_hot\npy'
 
 # Params for Train
 training_epochs = 40
-TRAIN_BATCH_SIZE = 50
+batch_size = 50
 display_step = 10
 validation_step = 10
 
 #TEST_BATCH_SIZE = 500
 def train():
-    # Some parameters
-    batch_size = TRAIN_BATCH_SIZE
-
     # Prepare data
-    X_train, Y_train, X_val, Y_val,X_test,Y_test = prepare_data.getalldata(rootpath)
-    train_size=X_train.shape[0]
+    T_train, W_train, T_val, W_val,T_test,W_test = prepare_data.getalldata(rootpath)
+    train_size=T_train.shape[0]
 
     is_training = tf.placeholder(tf.bool, name='MODE')
 
@@ -92,14 +89,9 @@ def train():
     for epoch in range(training_epochs):
 
         # Loop over all batches
-        for i in range(total_batch):
-
-            # Compute the offset of the current minibatch in the data.
-            offset = (i * batch_size) % (train_size)
-            batch_x = X_train[offset:(offset + batch_size), :]
-            batch_y = Y_train[offset:(offset + batch_size), :]
-
-            _, train_loss, train_accuracy, summary = sess.run([train_step, loss, accuracy, merged_summary_op] , feed_dict={x: batch_x, y_: batch_y, is_training: True})
+        i=0
+        for batch_T,batch_W in prepare_data.minibatches(inputs=T_train,targets=W_train,batch_size=batch_size, shuffle=True):
+            _, train_loss, train_accuracy, summary = sess.run([train_step, loss, accuracy, merged_summary_op] , feed_dict={x: batch_T, y_: batch_W, is_training: True})
 
             # Write logs at every iteration
             summary_writer.add_summary(summary, epoch * total_batch + i)
@@ -113,15 +105,14 @@ def train():
             if i % validation_step == 0:
                 # Calculate accuracy
                 score, validation_loss, validation_accuracy = sess.run([y, loss, accuracy],
-                feed_dict={x: X_val, y_: Y_val, is_training: False})
+                feed_dict={x: T_val, y_: W_val, is_training: False})
 
-                print("Epoch:", '%4d,' % (epoch ),
+                print("Epoch:", '%4d,' % (epoch),
                 "batch_index %4d/%4d, validation loss %.5f,validation accuracy %.5f" % (i, total_batch,validation_loss, validation_accuracy))
-
+            i+=1
             # Save the current model if the maximum accuracy is updated
             if validation_accuracy > max_acc:
                 max_acc = validation_accuracy
-                best_y_score=score
                 save_path = saver.save(sess, MODEL_DIRECTORY)
                 print("Model updated and saved in file: %s" % save_path)
 
@@ -131,8 +122,8 @@ def train():
     # Restore variables from disk
     saver.restore(sess, MODEL_DIRECTORY)
 
-    y_final = sess.run(y, feed_dict={x: X_test, y_: Y_test, is_training: False})
-    correct_prediction = np.equal(np.argmax(y_final, 1), np.argmax(Y_test, 1))
+    y_final = sess.run(y, feed_dict={x: T_test, y_: W_test, is_training: False})
+    correct_prediction = np.equal(np.argmax(y_final, 1), np.argmax(W_test, 1))
     print("test accuracy for the stored model: %f" % np.mean(correct_prediction))
     sess.close()
     #AUC
@@ -140,13 +131,13 @@ def train():
     tpr = dict()
     roc_auc = dict()
     for i in range(2):
-        fpr[i],tpr[i],_ = roc_curve(Y_test[:,i], y_final[:,i])
+        fpr[i],tpr[i],_ = roc_curve(W_test[:,i], y_final[:,i])
         roc_auc[i] = auc(fpr[i],tpr[i])
 
     print("auc of player0:%f"%roc_auc[0])
     print("auc of player1:%f"%roc_auc[1])
     # micro average
-    fpr["micro"], tpr["micro"], _ = roc_curve(Y_test.ravel(), y_final.ravel())
+    fpr["micro"], tpr["micro"], _ = roc_curve(W_test.ravel(), y_final.ravel())
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
     print("auc of micro:%f"%roc_auc["micro"])
 
