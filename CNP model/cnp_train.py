@@ -8,13 +8,9 @@ import cnp_preparedata
 from sklearn.metrics import roc_curve, auc
 
 #the datasets is encoded to npy files
-rootpath = r'F:\yutian\Datasets\InterceptedDatasets\randomsample_encoding\npy'
-CNPRegressionDescription = collections.namedtuple(
-    "CNPRegressionDescription",
-    ("query", "target_y", "num_total_points", "num_context_points"))
+rootpath = r'E:\研\yutian\Datasets\randomsample_one_hot\npy'
 
-
-# ## Conditional Neural Processes
+ ## Conditional Neural Processes
 #
 # We can visualise a forward pass in a CNP as follows:
 #
@@ -115,9 +111,9 @@ class DeterministicModel(object):
         self._encoder = DeterministicEncoder(encoder_output_sizes)
         self._decoder = DeterministicDecoder(decoder_output_sizes)
 
-    def __call__(self, query, num_total_points, num_contexts, target_y=None):
-
-        (context_x, context_y), target_x = query
+    def __call__(self, context_x, context_y, target_x, target_y=None):
+        num_total_points=target_x.shape[1]
+        num_contexts=context_x.shape[1]
 
         representation = self._encoder(context_x, context_y, num_contexts)
         output = self._decoder(representation, target_x, num_total_points)
@@ -138,7 +134,7 @@ class DeterministicModel(object):
 
         return loss, accuracy, output
 
-TRAINING_ITERATIONS = 800
+TRAINING_ITERATIONS = 200
 HIDDEN_SIZE = 128
 MODEL_TYPE = 'NP'
 ATTENTION_TYPE = 'uniform'
@@ -147,32 +143,9 @@ tf.reset_default_graph()
 batchsize = 50
 
 #Divide the training sets and tests set in a 1: 1 ratio
-X_train, Y_train, X_test, Y_test = cnp_preparedata.get_train_test_data(rootpath)
-
-# Train sets divided into context sets and target sets
-context_X_train, context_Y_train, target_X_train, target_Y_train = cnp_preparedata.split_c_t(X_train, Y_train,
-                                                                                             batch_size=batchsize)
-context_X_train = tf.convert_to_tensor(context_X_train, dtype=tf.float32)
-context_Y_train = tf.convert_to_tensor(context_Y_train, dtype=tf.float32)
-target_X_train = tf.convert_to_tensor(target_X_train, dtype=tf.float32)
-target_Y_train = tf.convert_to_tensor(target_Y_train, dtype=tf.float32)
-train_query = ((context_X_train, context_Y_train), target_X_train)
-data_train = CNPRegressionDescription(query=train_query, target_y=target_Y_train,
-                                      num_total_points=target_X_train.shape[1],
-                                      num_context_points=context_X_train.shape[1])
-print(data_train)
-
-# Test sets divided into context sets and target sets
-context_X_test, context_Y_test, target_X_test, target_Y_test = cnp_preparedata.split_c_t(X_test, Y_test,
-                                                                                         batch_size=batchsize)
-context_X_test = tf.convert_to_tensor(context_X_test, dtype=tf.float32)
-context_Y_test = tf.convert_to_tensor(context_Y_test, dtype=tf.float32)
-target_X_test = tf.convert_to_tensor(target_X_test, dtype=tf.float32)
-target_Y_test = tf.convert_to_tensor(target_Y_test, dtype=tf.float32)
-test_query = ((context_X_test, context_Y_test), target_X_test)
-data_test = CNPRegressionDescription(query=test_query, target_y=target_Y_test, num_total_points=target_X_test.shape[1],
-                                     num_context_points=context_X_test.shape[1])
-print(data_test)
+T_train, W_train, T_test, W_test = cnp_preparedata.get_train_test_data(rootpath)
+num_context_train=T_train.shape[0]/(2*batchsize)
+num_context_test=T_test.shape[0]/(2*batchsize)
 
 encoder_output_sizes = [128, 128, 128, 128]
 decoder_output_sizes = [128, 128, 2]
@@ -180,13 +153,21 @@ decoder_output_sizes = [128, 128, 2]
 # Define the model
 model = DeterministicModel(encoder_output_sizes, decoder_output_sizes)
 
+context_X_train=tf.placeholder(tf.float32, [batchsize,num_context_train,2496])
+context_Y_train=tf.placeholder(tf.float32, [batchsize,num_context_train,2])
+target_X_train=tf.placeholder(tf.float32, [batchsize,num_context_train,2496])
+target_Y_train=tf.placeholder(tf.float32, [batchsize,num_context_train,2])
+
+context_X_test=tf.placeholder(tf.float32, [batchsize,num_context_test,2496])
+context_Y_test=tf.placeholder(tf.float32, [batchsize,num_context_test,2])
+target_X_test=tf.placeholder(tf.float32, [batchsize,num_context_test,2496])
+
+
 # Define the loss
-loss, acc, y_pred_train = model(data_train.query, data_train.num_total_points,
-                                data_train.num_context_points, data_train.target_y)
+loss, acc, y_pred_train = model(context_X_train, context_Y_train,target_X_train,target_Y_train)
 
 # Get the predicted mean and variance at the target points for the testing set
-_, _, y_pred_test = model(data_test.query, data_test.num_total_points,
-                          data_test.num_context_points)
+_, _, y_pred_test = model(context_X_test, context_Y_test,target_X_test)
 
 # Set up the optimizer and train step
 optimizer = tf.train.AdamOptimizer(1e-4)
@@ -202,9 +183,11 @@ with tf.Session() as sess:
     sess.run(init)
 
     for it in range(TRAINING_ITERATIONS):
-        sess.run([train_step])
-
-        train_acc, loss_value, y_score = sess.run([acc, loss, y_pred_train])
+        c_T_train, c_W_train, t_T_train, t_W_train = cnp_preparedata.split_c_t(T_train, W_train,batch_size=batchsize,shuffle=False)
+        _,train_acc, loss_value, y_score = sess.run([train_step,acc, loss, y_pred_train], feed_dict={context_X_train: c_T_train,
+                                                                                        context_Y_train: c_W_train,
+                                                                                        target_X_train: t_T_train,
+                                                                                        target_Y_train: t_W_train})
         print("Iteration: %4d, train_loss:%f,train_acc:%f" % (it, loss_value, train_acc))
 
         if train_acc > max_acc:
@@ -214,12 +197,15 @@ with tf.Session() as sess:
             print("Model updated and saved in file: %s" % save_path)
 
     # test
+    c_T_test, c_W_test, t_T_test, t_W_test = cnp_preparedata.split_c_t(T_test, W_test,batch_size=batchsize,shuffle=False)
     saver.restore(sess, MODEL_DIRECTORY)
-    y_test = sess.run([y_pred_test])
+    y_test = sess.run([y_pred_test],feed_dict={context_X_test: c_T_test,
+                                               context_Y_test: c_W_test,
+                                               target_X_test: t_T_test})
     y_test = np.array(y_test)
     y_test = y_test.reshape([-1, 2])
-    target_y = data_test.target_y.eval().reshape([-1, 2])
-    correct_prediction = np.equal(np.argmax(y_test, 1), np.argmax(target_y, 1))
+    target_y_test= t_W_test.reshape([-1, 2])
+    correct_prediction = np.equal(np.argmax(y_test, 1), np.argmax(target_y_test, 1))
     accuracy = np.mean(correct_prediction)
     print("Test_acc:%f " % accuracy)
 
@@ -229,13 +215,13 @@ with tf.Session() as sess:
     roc_auc = dict()
 
     for i in range(2):
-        fpr[i], tpr[i], _ = roc_curve(target_y[:, i], y_test[:, i])
+        fpr[i], tpr[i], _ = roc_curve(target_y_test[:, i], y_test[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     print("auc of player0:%f" % roc_auc[0])
     print("auc of player1:%f" % roc_auc[1])
     # micro average
-    fpr["micro"], tpr["micro"], _ = roc_curve(target_y.ravel(), y_test.ravel())
+    fpr["micro"], tpr["micro"], _ = roc_curve(target_y_test.ravel(), y_test.ravel())
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
     print("auc of micro:%f" % roc_auc["micro"])
 
