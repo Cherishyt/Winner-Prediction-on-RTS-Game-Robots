@@ -9,7 +9,7 @@ from src.Bayes_By_Backprop.model import *
 from sklearn.model_selection import train_test_split
 import os
 #the path of npy files
-rootpath=r'F:\yutian\Datasets\datasets_nonMCTS\randomsample_encoding_ont_hot\npy'
+rootpath=r'E:\研\yutian\Datasets\randomsample_one_hot\npy'
 models_dir = "BBP_model"
 results_dir = "BBP_results"
 mkdir(models_dir)
@@ -21,38 +21,37 @@ nb_epochs = 100
 lr=1e-4
 
 # load data
-X,Y=[],[]
+T,W=[],[]
 for file in os.listdir(rootpath):
     filename=os.path.splitext(file)[0]
     #get labels
     winner=int(filename[-1:])
     #one-hot
     if winner==0:
-        Y.append([1,0])
+        W.append([1,0])
     elif winner==1:
-        Y.append([0,1])
+        W.append([0,1])
     else:
         raise ValueError("Invalid winner value!")
 
-    x=np.load(os.path.join(rootpath,file))
-    x=x.reshape([-1])
-    X.append(x)
+    t=np.load(os.path.join(rootpath,file))
+    T.append(t)
 
-X = np.array(X)
-Y = np.array(Y)
-print(X.shape)
-print(Y.shape)
+T = np.array(T)  #(,8,8,39)
+W = np.array(W)  #(,2)
+print(T.shape)
+print(W.shape)
 #50% train sets，25% val sets，25% test set
-X_train, X_val_test, Y_train, Y_val_test = train_test_split(X, Y, test_size=1 / 2)
-X_test, X_val, Y_test, Y_val = train_test_split(X_val_test, Y_val_test, test_size=1 / 2)
-print(X_train.shape)
-print(Y_train.shape)
-print(X_val.shape)
-print(Y_val.shape)
-print(X_test.shape)
-print(Y_test.shape)
+T_train, T_val_test, W_train, W_val_test = train_test_split(T, W, test_size=1 / 2)
+T_test, T_val, W_test, W_val = train_test_split(T_val_test, W_val_test, test_size=1 / 2)
+print(T_train.shape)
+print(W_train.shape)
+print(T_val.shape)
+print(W_val.shape)
+print(T_test.shape)
+print(W_test.shape)
 
-NTrainPoints=X_train.shape[0]
+NTrainPoints=T_train.shape[0]
 print(NTrainPoints)
 use_cuda = torch.cuda.is_available()
 
@@ -100,14 +99,14 @@ for i in range(0, nb_epochs):
     nb_samples = 0
 
     #train
-    for x, y in minibatches(X_train, Y_train, batch_size, shuffle=True):
-        cost_dkl, cost_pred, err,acc = net.fit(x, y, samples=ELBO_samples)
+    for batch_T, batch_W in minibatches(T_train, W_train, batch_size, shuffle=True):
+        cost_dkl, cost_pred, err,acc = net.fit(batch_T, batch_W, samples=ELBO_samples)
 
         err_train[i] += err
         kl_cost_train[i] += cost_dkl
         pred_cost_train[i] += cost_pred
         acc_train[i]+=acc
-        nb_samples += len(x)
+        nb_samples += len(batch_T)
 
     kl_cost_train[i] /= nb_samples  # Normalise by number of samples in order to get comparable number to the -log like
     pred_cost_train[i] /= nb_samples
@@ -126,12 +125,12 @@ for i in range(0, nb_epochs):
         net.set_mode_train(False)
         nb_samples = 0
         
-        cost, err, probs,acc,out = net.eval(X_val, Y_val)  # This takes the expected weights to save time, not proper inference
+        cost, err, probs,acc,out = net.eval(T_val, W_val)  # This takes the expected weights to save time, not proper inference
 
         cost_dev[i] += cost
         err_dev[i] += err
         acc_dev[i] += acc
-        nb_samples += len(X_val)
+        nb_samples += len(T_val)
 
         cost_dev[i] /= nb_samples
         err_dev[i] /= nb_samples
@@ -170,12 +169,12 @@ err_test=0
 acc_test=0
 nb_samples=0
 net.load(models_dir + '/theta_best.dat')
-cost, err, probs, acc,y_score = net.eval(X_test, Y_test)  # This takes the expected weights to save time, not proper inference
+cost, err, probs, acc,y_score = net.eval(T_test, W_test)  # This takes the expected weights to save time, not proper inference
 
 cost_test += cost
 err_test += err
 acc_test += acc
-nb_samples += len(X_test)
+nb_samples += len(T_test)
 
 cost_test /= nb_samples
 err_test /= nb_samples
@@ -188,14 +187,13 @@ fpr = dict()
 tpr = dict()
 roc_auc = dict()
 for i in range(2):
-    fpr[i],tpr[i],_ = roc_curve(Y_test[:,i], y_score[:,i].detach().numpy().ravel())
+    fpr[i],tpr[i],_ = roc_curve(W_test[:,i], y_score[:,i].detach().numpy().ravel())
     roc_auc[i] = auc(fpr[i],tpr[i])
 
 print("auc of player0:%f"%roc_auc[0])
 print("auc of player1:%f"%roc_auc[1])
-#print((Y_test))
-#print(y_score)
-fpr["micro"], tpr["micro"], _ = roc_curve(Y_test.ravel(), y_score.detach().numpy().ravel())
+
+fpr["micro"], tpr["micro"], _ = roc_curve(W_test.ravel(), y_score.detach().numpy().ravel())
 roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 print("auc of micro:%f" % roc_auc["micro"])
 
@@ -204,15 +202,7 @@ plt.figure()
 plt.plot(fpr["micro"], tpr["micro"],
          label='Bayes NNs roc of micro (auc = {0:0.2f})'
                ''.format(roc_auc["micro"]), color='green', linestyle='-', linewidth=1.5)
-'''
-plt.plot(fpr[0], tpr[0],
-        label='Bayes NNs roc of player0(auc = {0:0.2f})'
-                ''.format(roc_auc[0]),color='navy', linestyle=':', linewidth=1.5)
 
-plt.plot(fpr[1], tpr[1],
-        label='Bayes NNs roc of player1(auc = {0:0.2f})'
-                ''.format(roc_auc[1]), color='yellow', linestyle='--', linewidth=1.5)
-'''
 plt.plot([0, 1], [0, 1], 'k--')
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
