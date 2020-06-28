@@ -6,7 +6,7 @@ import lstm_model
 
 tf.reset_default_graph()
 #the datasets is encoded to npy files
-rootpath = r'F:\yutian\Datasets\InterceptedDatasets\randomsample_encoding\npy'
+rootpath = r'E:\研\yutian\Datasets\randomsample_one_hot\npy'
 MODEL_DIRECTORY = "model/model.ckpt"
 LOGS_DIRECTORY = "logs/train"
 
@@ -24,8 +24,8 @@ n_classes = 2
 # data
 def train():
     # Prepare data
-    X_train, Y_train, X_val, Y_val, X_test, Y_test = prepare_data.getalldata(rootpath)
-    train_size = X_train.shape[0]
+    T_train, W_train, T_val, W_val, T_test, W_test = prepare_data.getalldata(rootpath)
+    train_size = T_train.shape[0]
     total_batch = int(train_size / batchsize)
 
     # tensor placeholder
@@ -69,13 +69,11 @@ def train():
     max_acc = 0
     # training
     for epoch in range(training_epochs):
-        for i in range(total_batch):
-            offset = (i * batchsize) % (train_size)
-            batch_x = X_train[offset:(offset + batchsize), :]
-            batch_y = Y_train[offset:(offset + batchsize), :]
+        i=0
+        for batch_T,batch_W in prepare_data.minibatches(inputs=T_train,targets=W_train,batch_size=batchsize, shuffle=True):
 
             _, train_loss, train_accuracy,summary = sess.run([train_op, loss, accuracy, merged_summary_op],
-                                                     feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5,
+                                                     feed_dict={x: batch_T, y: batch_W, keep_prob: 0.5,
                                                                 batch_size: batchsize})
             summary_writer.add_summary(summary, epoch * total_batch + i)
 
@@ -84,8 +82,8 @@ def train():
                       "batch_index %4d/%4d,training loss %.5f, training accuracy %.5f" % (
                           i, total_batch, train_loss, train_accuracy))
                 score, validation_loss, validation_accuracy = sess.run([y_pred, loss, accuracy],
-                                                                       feed_dict={x: X_val, y: Y_val, keep_prob: 0.5,
-                                                                                  batch_size: X_val.shape[0]})
+                                                                       feed_dict={x: T_val, y: W_val, keep_prob: 0.5,
+                                                                                  batch_size: T_val.shape[0]})
                 print("Epoch:", '%4d,' % (epoch),
                       "batch_index %4d/%4d, validation loss %.5f,validation accuracy %.5f" % (
                           i, total_batch, validation_loss, validation_accuracy))
@@ -100,7 +98,7 @@ def train():
     # Restore variables from disk
     saver.restore(sess, MODEL_DIRECTORY)
     y_final, test_accuarcy = sess.run([y_pred, accuracy],
-                                      feed_dict={x: X_test, y: Y_test, keep_prob: 1.0, batch_size: X_test.shape[0]})
+                                      feed_dict={x: T_test, y: W_test, keep_prob: 1.0, batch_size: T_test.shape[0]})
     print("test accuracy for the stored model: %f" % test_accuarcy)
 
     sess.close()
@@ -109,13 +107,13 @@ def train():
     tpr = dict()
     roc_auc = dict()
     for i in range(2):
-        fpr[i], tpr[i], _ = roc_curve(Y_test[:, i], y_final[:, i])
+        fpr[i], tpr[i], _ = roc_curve(W_test[:, i], y_final[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     print("auc of player0:%f" % roc_auc[0])
     print("auc of player1:%f" % roc_auc[1])
 
-    fpr["micro"], tpr["micro"], _ = roc_curve(Y_test.ravel(), y_final.ravel())
+    fpr["micro"], tpr["micro"], _ = roc_curve(W_test.ravel(), y_final.ravel())
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
     print("auc of micro:%f" % roc_auc["micro"])
 
