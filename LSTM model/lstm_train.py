@@ -3,6 +3,7 @@ import prepare_data
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 import lstm_model
+import random
 
 tf.reset_default_graph()
 #the datasets is encoded to npy files
@@ -92,6 +93,10 @@ def train():
                     best_y_score = score
                     save_path = saver.save(sess, MODEL_DIRECTORY)
                     print("Model updated and saved in file: %s" % save_path)
+        index=[i for i in range(train_size)]
+        random.shuffle(index)
+        X_train=X_train[index]
+        Y_train=Y_train[index]
     print("Max acc: %.5f" % max_acc)
     print("Optimization Finished!")
 
