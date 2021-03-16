@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import prepare_data
 import cnn_model
 import numpy as np
+import random
 
 MODEL_DIRECTORY = "model/model.ckpt"
 LOGS_DIRECTORY = "logs/train"
@@ -115,7 +116,11 @@ def train():
                 #best_y_score=score
                 save_path = saver.save(sess, MODEL_DIRECTORY)
                 print("Model updated and saved in file: %s" % save_path)
-
+        #打乱
+        index=[i for i in range(train_size)]
+        random.shuffle(index)
+        X_train=X_train[index]
+        Y_train=Y_train[index]
     print("Max acc: %.5f" % max_acc)
     print("Optimization Finished!")
 
